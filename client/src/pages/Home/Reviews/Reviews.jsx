@@ -8,7 +8,7 @@ const Reviews = ({ fetchReviews }) => {
   const allReviews = use(fetchReviews);
   console.log(allReviews);
   return (
-    <>
+    <div className="my-30">
       <div className="text-center py-4 space-y-5 mt-5">
         <img className="mx-auto" src={customerTop} alt="" />
         <h1 className="text-5xl text-secondary font-bold">
@@ -48,7 +48,7 @@ const Reviews = ({ fetchReviews }) => {
           </SwiperSlide>
         ))}
       </Swiper>
-    </>
+    </div>
   );
 };
 

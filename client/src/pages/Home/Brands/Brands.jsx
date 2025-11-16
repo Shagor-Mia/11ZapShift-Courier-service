@@ -15,7 +15,7 @@ const brandLogo = [amazon, amazonv, casio, monstar, ranstand, star, starp];
 
 const Brands = () => {
   return (
-    <div className="my-15">
+    <div className="my-15 mx-auto max-w-6xl">
       <h1 className="text-secondary text-3xl font-semibold text-center">
         We've helped thousands of sales teams
       </h1>
