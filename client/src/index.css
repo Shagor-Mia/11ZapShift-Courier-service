@@ -1,12 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
-@plugin "daisyui" {
+@plugin "daisyui";
+/* {
   themes: light --default, dark;
+  --color-primary: #caeb66;
+  --color-secondary: #03373d;
+} */
+@plugin "daisyui/theme" {
+  name: "light";
+  color-scheme: light;
   --color-primary: #caeb66;
   --color-secondary: #03373d;
 }
 /*  theme problem  secondary ,primary not working in components*/
 body {
+  background: #eaeced;
   font-family: "Urbanist", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
