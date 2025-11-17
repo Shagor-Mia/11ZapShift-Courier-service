@@ -7,12 +7,12 @@ const AuthLayout = () => {
   return (
     <div className="max-w-7xl mx-auto border-2">
       <Logo />
-      <div className="border-2 flex justify-center items-center">
-        <div className="">
+      <div className="border-2 items-center flex">
+        <div className="flex-1">
           <Outlet />
         </div>
-        <div className="">
-          <img src={authImg} alt="" />
+        <div className="flex-1">
+          <img src={authImg} className="" alt="" />
         </div>
       </div>
     </div>

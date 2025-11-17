@@ -1,5 +1,8 @@
 import React from "react";
 import { useForm } from "react-hook-form";
+import { useAuth } from "../../hooks/useAuth";
+import { Link } from "react-router";
+import GoogleLogin from "./GoogleLogin";
 
 const Register = () => {
   const {
@@ -8,12 +11,19 @@ const Register = () => {
     formState: { errors },
   } = useForm();
 
+  const { userRegister } = useAuth();
+
   const handleRegister = (data) => {
-    console.log(data);
+    userRegister(data.email, data.password)
+      .then((result) => console.log(result.user))
+      .catch((err) => console.log(err));
   };
+
   return (
-    <div>
-      <form onSubmit={handleSubmit(handleRegister)}>
+    <div className="card bg-base-100 mx-auto w-full max-w-sm shrink-0 shadow-2xl">
+      <h1 className="text-5xl font-bold text-center mt-5">Create Account</h1>
+      <p className="text-center text-xl font-semibold">With ZapShift</p>
+      <form onSubmit={handleSubmit(handleRegister)} className="card-body">
         <fieldset className="fieldset">
           <label className="label">Email</label>
           <input
@@ -55,9 +65,18 @@ const Register = () => {
           <div>
             <a className="link link-hover">Forgot password?</a>
           </div>
-          <button className="btn btn-neutral mt-4">Login</button>
+          <button className="btn btn-neutral mt-4">Register</button>
         </fieldset>
+        <p>
+          Already have an Account?{" "}
+          <span>
+            <Link to={"/login"} className="text-blue-600 underline">
+              Login
+            </Link>
+          </span>
+        </p>
       </form>
+      <GoogleLogin />
     </div>
   );
 };
