@@ -3,8 +3,11 @@ import { AuthContext } from "./AuthContext";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signOut,
+  updateProfile,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase.config";
 
@@ -28,8 +31,21 @@ const AuthProvider = ({ children }) => {
     return signInWithPopup(auth, googleProvider);
   };
 
+  const logOut = () => {
+    setLoading(true);
+    signOut(auth);
+  };
+  const updateRegisterUserProfile = (profile) => {
+    return updateProfile(auth.currentUser, profile);
+  };
+
   //   observer
-  useEffect(() => {}, []);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) =>
+      setUser(currentUser)
+    );
+    return () => unsubscribe();
+  }, []);
 
   const userInfo = {
     user,
@@ -39,6 +55,8 @@ const AuthProvider = ({ children }) => {
     userLogin,
     userRegister,
     googleSignIn,
+    logOut,
+    updateRegisterUserProfile,
   };
   return <AuthContext value={userInfo}>{children}</AuthContext>;
 };
