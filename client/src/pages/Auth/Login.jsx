@@ -1,7 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../hooks/useAuth";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import GoogleLogin from "./GoogleLogin";
 
 const Login = () => {
@@ -12,10 +12,15 @@ const Login = () => {
   } = useForm();
   const { userLogin } = useAuth();
 
+  const navigate = useNavigate();
+  const location = useLocation();
+  // console.log("after login", location);
+
   const handleLogin = (data) => {
     userLogin(data.email, data.password)
       .then((result) => {
         console.log("after login", result.user);
+        navigate(location?.state || "/");
       })
       .catch((err) => {
         console.log(err);
@@ -59,7 +64,11 @@ const Login = () => {
         <p>
           New To Zap Shift?{" "}
           <span>
-            <Link to={"/register"} className="text-blue-600 underline">
+            <Link
+              state={location.state}
+              to={"/register"}
+              className="text-blue-600 underline"
+            >
               Register
             </Link>
           </span>
