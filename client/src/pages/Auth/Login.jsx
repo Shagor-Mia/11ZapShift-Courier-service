@@ -57,7 +57,9 @@ const Login = () => {
             <span className="text-red-500">password must be 6 character!</span>
           )}
           <div>
-            <a className="link link-hover">Forgot password?</a>
+            <Link to={"/forget-password"} className="link link-hover">
+              Forgot password?
+            </Link>
           </div>
           <button className="btn btn-neutral mt-4">Login</button>
         </fieldset>
