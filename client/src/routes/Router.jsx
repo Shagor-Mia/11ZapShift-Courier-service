@@ -10,6 +10,8 @@ import PrivateRoute from "./PrivateRoute";
 import Rider from "../pages/Rider/Rider";
 import ForgetPassword from "../pages/Auth/ForgetPassword";
 import SendParcel from "../pages/SendParcel/SendParcel";
+import DashboardLayout from "../layouts/DashboardLayout";
+import MyParcels from "../pages/Dashboards/MyParcels";
 
 const router = createBrowserRouter([
   {
@@ -60,6 +62,20 @@ const router = createBrowserRouter([
       {
         path: "forget-password",
         Component: ForgetPassword,
+      },
+    ],
+  },
+  {
+    path: "dashboard",
+    element: (
+      <PrivateRoute>
+        <DashboardLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      {
+        path: "my-parcels",
+        Component: MyParcels,
       },
     ],
   },
