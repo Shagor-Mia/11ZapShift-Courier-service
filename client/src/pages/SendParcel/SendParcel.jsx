@@ -1,6 +1,6 @@
 import React from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import useSecureAxios from "../../hooks/useSecureAxios";
 import { useAuth } from "../../hooks/useAuth";
@@ -15,6 +15,7 @@ const SendParcel = () => {
 
   const { user } = useAuth();
   const axiosSecure = useSecureAxios();
+  const navigate = useNavigate();
 
   const serviceCenters = useLoaderData();
 
@@ -71,13 +72,17 @@ const SendParcel = () => {
       if (result.isConfirmed) {
         axiosSecure.post(`/parcels`, data).then((res) => {
           console.log("after saving parcels", res.data);
+          if (res.data.insertedId) {
+            navigate("/dashboard/my-parcels");
+            Swal.fire({
+              position: "center",
+              icon: "success",
+              title: "Parcel Created. Please Pay.",
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          }
         });
-
-        // Swal.fire({
-        //   title: "Confirmed!",
-        //   text: "Your parcel ready to go.",
-        //   icon: "success",
-        // });
       }
     });
   };
