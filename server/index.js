@@ -78,7 +78,17 @@ async function run() {
     });
 
     // payment related apis
+    app.get("/payments", async (req, res) => {
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.customerEmail = email;
+      }
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
+    });
 
+    // stripe integration
     app.post("/payment-checkout-session", async (req, res) => {
       const paymentInfo = req.body;
       const amount = parseInt(paymentInfo.cost) * 100;
@@ -146,6 +156,19 @@ async function run() {
       const sessionId = req.query.session_id;
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       // console.log(session);
+
+      // stop duplication input
+      const transactionId = session.payment_intent;
+      const query = { transactionId: transactionId };
+      const paymentExist = await paymentCollection.findOne(query);
+      if (paymentExist) {
+        return res.send({
+          message: "transaction exist",
+          transactionId,
+          trackingId: paymentExist.trackingId,
+        });
+      }
+
       const trackingId = generateTrackingId();
 
       if (session.payment_status === "paid") {
@@ -160,13 +183,14 @@ async function run() {
         const result = await parcelCollection.updateOne(query, update);
 
         const payment = {
-          amount: session.total_amount / 100,
+          amount: session.amount_total / 100,
           currency: session.currency,
           customerEmail: session.customer_email,
           parcelId: session.metadata.parcelId,
           parcelName: session.metadata.parcelName,
           transactionId: session.payment_intent,
           paymentStatus: session.payment_status,
+          trackingId: trackingId,
           paidAt: new Date(),
         };
 
