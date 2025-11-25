@@ -11,7 +11,11 @@ const port = process.env.PORT || 3000;
 const admin = require("firebase-admin");
 
 // firebase adminSDK
-const serviceAccount = require("./final-project-zipshift-curier-firebase-adminsdk.json");
+const fs = require("fs");
+
+const serviceAccount = JSON.parse(
+  Buffer.from(process.env.FIREBASE_ADMIN, "base64").toString("utf8")
+);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
