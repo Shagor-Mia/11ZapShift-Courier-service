@@ -8,6 +8,16 @@ const stripe = require("stripe")(process.env.STRIPE_KEY);
 const app = express();
 const port = process.env.PORT || 3000;
 
+const admin = require("firebase-admin");
+
+// firebase adminSDK
+const serviceAccount = require("./final-project-zipshift-curier-firebase-adminsdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+// trackingId
 const generateTrackingId = () => {
   const prefix = "PRCL";
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
@@ -19,6 +29,23 @@ const generateTrackingId = () => {
 // middlewares
 app.use(express.json());
 app.use(cors());
+
+const verifyFirebaseToken = async (req, res, next) => {
+  // console.log("authorizeToken,", req.headers.authorization);
+  const token = req.headers.authorization;
+  if (!token) {
+    return res.status(401).send({ message: `unauthorized access` });
+  }
+  try {
+    const idToken = token.split(" ")[1];
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    // console.log(`decoded in the token`, decoded);
+    req.decoded_email = decoded.email;
+  } catch (error) {
+    return res.status(401).send({ message: "Invalid or expired token", error });
+  }
+  next();
+};
 
 const uri = process.env.URL;
 
@@ -35,9 +62,28 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const db = client.db("zapShiftDB");
+    const userCollection = db.collection("users");
     const parcelCollection = db.collection("parcels");
     const paymentCollection = db.collection("payments");
+    const riderCollection = db.collection("riders");
 
+    // user apis
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      user.role = "user";
+      user.createdAt = new Date();
+
+      const email = user.email;
+      const userExist = await userCollection.findOne({ email });
+      if (userExist) {
+        return res.send({ message: "user already exist!" });
+      }
+
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    //
     app.get("/parcels", async (req, res) => {
       const parcels = await parcelCollection.find().toArray();
       res.send(parcels);
@@ -78,13 +124,23 @@ async function run() {
     });
 
     // payment related apis
-    app.get("/payments", async (req, res) => {
+    app.get("/payments", verifyFirebaseToken, async (req, res) => {
       const email = req.query.email;
       const query = {};
+      // console.log("headers", req.headers);
       if (email) {
         query.customerEmail = email;
+        // check user email
+        if (email !== req.decoded_email) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
       }
-      const result = await paymentCollection.find(query).toArray();
+      const result = await paymentCollection
+        .find(query)
+        .sort({
+          paidAt: -1,
+        })
+        .toArray();
       res.send(result);
     });
 
@@ -207,6 +263,25 @@ async function run() {
       } else {
         res.send({ success: false });
       }
+    });
+
+    // riders api
+    app.post("/riders", async (req, res) => {
+      const rider = req.body;
+      rider.status = "pending";
+      rider.createdAt = new Date();
+
+      const result = await riderCollection.insertOne(rider);
+      res.send(result);
+    });
+    // query with status
+    app.get("/riders", async (req, res) => {
+      const query = {};
+      if (req.query.status) {
+        query.status = req.query.status;
+      }
+      const rider = await riderCollection.find(query).toArray();
+      res.send(rider);
     });
 
     // Send a ping to confirm a successful connection

@@ -1,6 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../hooks/useAuth";
+import useSecureAxios from "../../hooks/useSecureAxios";
 import { Link, useLocation, useNavigate } from "react-router";
 import GoogleLogin from "./GoogleLogin";
 import axios from "axios";
@@ -15,15 +16,18 @@ const Register = () => {
   const { userRegister, updateRegisterUserProfile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const axiosSecure = useSecureAxios();
 
-  console.log("register location", location);
+  // console.log("register location", location);
 
   const handleRegister = (data) => {
-    console.log(data.photo[0]);
+    // console.log(data.photo[0]);
+
     const profileImage = data.photo[0];
     userRegister(data.email, data.password)
       .then((result) => {
-        console.log(result.user);
+        // console.log(result.user);
+
         // store data image url
         const formData = new FormData();
         formData.append("image", profileImage);
@@ -32,11 +36,26 @@ const Register = () => {
         }`;
 
         axios.post(img_URL, formData).then((res) => {
-          console.log("after response", res.data);
+          // console.log("after response", res.data);
+
+          const photoURL = res.data.data.url;
+
+          // create user in the database
+          const userInfo = {
+            email: data.email,
+            displayName: data.name,
+            photoURL: photoURL,
+          };
+          axiosSecure.post("/users", userInfo).then((res) => {
+            if (res.data.insertedId) {
+              console.log("user created in the database");
+            }
+          });
+
           //update user profile
           const userProfile = {
             displayName: data.name,
-            photoURL: res.data.data.url,
+            photoURL: photoURL,
           };
           updateRegisterUserProfile(userProfile)
             .then(() => {

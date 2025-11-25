@@ -6,7 +6,7 @@ import customerTop from "../../../assets/customer-top.png";
 
 const Reviews = ({ fetchReviews }) => {
   const allReviews = use(fetchReviews);
-  console.log(allReviews);
+  // console.log(allReviews);
   return (
     <div className="my-30">
       <div className="text-center py-4 space-y-5 mt-5">
