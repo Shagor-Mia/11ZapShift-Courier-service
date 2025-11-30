@@ -1,12 +1,15 @@
 import useSecureAxios from "../../hooks/useSecureAxios";
 import { useQuery } from "@tanstack/react-query";
-import { FaUserCheck } from "react-icons/fa";
+import { FaEye, FaUserCheck } from "react-icons/fa";
 import { IoPersonRemoveSharp } from "react-icons/io5";
 import { FaRegTrashCan } from "react-icons/fa6";
 import Swal from "sweetalert2";
+import { useRef, useState } from "react";
 
 const ApproveRiders = () => {
   const axiosSecure = useSecureAxios();
+  const [selectedRider, setSelectedRider] = useState(null);
+  const modalRef = useRef(null);
 
   const { refetch, data: riders = [] } = useQuery({
     queryKey: ["riders", "pending"],
@@ -67,6 +70,13 @@ const ApproveRiders = () => {
     });
   };
 
+  // show-modal
+  const viewRider = (rider) => {
+    // console.log(rider);
+    setSelectedRider(rider);
+    modalRef.current.showModal();
+  };
+
   return (
     <div className="my-10 mx-auto max-w-6xl">
       <h1 className="text-5xl font-bold">
@@ -109,6 +119,9 @@ const ApproveRiders = () => {
                   {rider.district},{rider.region}
                 </td>
                 <td>
+                  <button onClick={() => viewRider(rider)} className="btn">
+                    <FaEye />
+                  </button>
                   <button onClick={() => handleApproval(rider)} className="btn">
                     <FaUserCheck />
                   </button>
@@ -130,6 +143,51 @@ const ApproveRiders = () => {
           </tbody>
         </table>
       </div>
+      {/* modal */}
+      <dialog ref={modalRef} id="view_rider_modal" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg mb-4">Rider Details</h3>
+
+          {selectedRider && (
+            <div className="space-y-2">
+              <p>
+                <strong>Name:</strong> {selectedRider.name}
+              </p>
+              <p>
+                <strong>Email:</strong> {selectedRider.email}
+              </p>
+              <p>
+                <strong>Phone:</strong> {selectedRider.phone}
+              </p>
+              <p>
+                <strong>NID:</strong> {selectedRider.NID}
+              </p>
+              <p>
+                <strong>Driving License:</strong> {selectedRider.drivingLicense}
+              </p>
+              <p>
+                <strong>District:</strong> {selectedRider.district}
+              </p>
+              <p>
+                <strong>Region:</strong> {selectedRider.region}
+              </p>
+              <p>
+                <strong>Status:</strong> {selectedRider.status}
+              </p>
+              <p>
+                <strong>Created At:</strong>{" "}
+                {new Date(selectedRider.createdAt).toLocaleString()}
+              </p>
+            </div>
+          )}
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn">Close</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 };

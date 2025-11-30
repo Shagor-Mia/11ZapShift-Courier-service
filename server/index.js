@@ -72,6 +72,12 @@ async function run() {
     const riderCollection = db.collection("riders");
 
     // user apis
+    app.get("/users", verifyFirebaseToken, async (req, res) => {
+      // console.log(verifyFirebaseToken);
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       user.role = "user";
@@ -84,6 +90,31 @@ async function run() {
       }
 
       const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.get("/users/:id", async (req, res) => {});
+
+    app.get("/users/:email/role", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne(email);
+      if (!user) {
+        res.status(401).send({ message: "user not found" });
+      } else {
+        res.send({ role: user?.role || "user" });
+      }
+    });
+
+    app.patch("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const roleInfo = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: roleInfo.role,
+        },
+      };
+      const result = await userCollection.updateOne(query, updateDoc);
       res.send(result);
     });
 
