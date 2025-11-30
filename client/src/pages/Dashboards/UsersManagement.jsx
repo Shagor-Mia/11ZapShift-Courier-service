@@ -30,7 +30,7 @@ const UsersManagement = () => {
       confirmButtonText: "Yes, I Agree!",
     }).then((result) => {
       if (result.isConfirmed) {
-        axiosSecure.patch(`/users/${user._id}`, roleInfo).then((res) => {
+        axiosSecure.patch(`/users/${user._id}/role`, roleInfo).then((res) => {
           if (res.data.modifiedCount) {
             refetch();
             Swal.fire({

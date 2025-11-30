@@ -72,6 +72,17 @@ async function run() {
     const riderCollection = db.collection("riders");
 
     // user apis
+
+    // middleware for admin access,must be used after verifyToken
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded_email;
+      const admin = await userCollection.findOne({ email });
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
     app.get("/users", verifyFirebaseToken, async (req, res) => {
       // console.log(verifyFirebaseToken);
       const result = await userCollection.find().toArray();
@@ -97,7 +108,7 @@ async function run() {
 
     app.get("/users/:email/role", async (req, res) => {
       const email = req.params.email;
-      const user = await userCollection.findOne(email);
+      const user = await userCollection.findOne({ email });
       if (!user) {
         res.status(401).send({ message: "user not found" });
       } else {
@@ -105,18 +116,23 @@ async function run() {
       }
     });
 
-    app.patch("/users/:id", async (req, res) => {
-      const id = req.params.id;
-      const roleInfo = req.body;
-      const query = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          role: roleInfo.role,
-        },
-      };
-      const result = await userCollection.updateOne(query, updateDoc);
-      res.send(result);
-    });
+    app.patch(
+      "/users/:id/role",
+      verifyFirebaseToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const roleInfo = req.body;
+        const query = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            role: roleInfo.role,
+          },
+        };
+        const result = await userCollection.updateOne(query, updateDoc);
+        res.send(result);
+      }
+    );
 
     //
     app.get("/parcels", async (req, res) => {

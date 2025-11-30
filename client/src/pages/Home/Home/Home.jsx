@@ -14,9 +14,9 @@ const Home = () => {
   return (
     <div>
       <Banner />
+      <Brands />
       <HowItWorks />
       <OurServiceSection />
-      <Brands />
       <AboutUs />
       <CustomerPriority />
       <Reviews fetchReviews={fetchReviews} />

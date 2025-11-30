@@ -8,6 +8,7 @@ import useRole from "../hooks/useRole";
 
 const DashboardLayout = () => {
   const { role } = useRole();
+  // console.log("user Role", role);
   return (
     <div className="drawer lg:drawer-open max-w-7xl mx-auto">
       <input id="my-drawer-4" type="checkbox" className="drawer-toggle" />
@@ -120,7 +121,7 @@ const DashboardLayout = () => {
                   >
                     <FaUser />
                     <span className="is-drawer-close:hidden">
-                      Approve Riders
+                      User Management
                     </span>
                   </NavLink>
                 </li>
