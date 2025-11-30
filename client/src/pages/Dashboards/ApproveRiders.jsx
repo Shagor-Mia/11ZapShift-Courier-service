@@ -92,7 +92,8 @@ const ApproveRiders = () => {
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Status</th>
+              <th>Application Status</th>
+              <th>Work Status</th>
               <th>Location</th>
               <th>Actions</th>
             </tr>
@@ -115,6 +116,7 @@ const ApproveRiders = () => {
                     {rider.status}
                   </p>
                 </td>
+                <td>{rider.workStatus}</td>
                 <td>
                   {rider.district},{rider.region}
                 </td>

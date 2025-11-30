@@ -85,7 +85,20 @@ async function run() {
 
     app.get("/users", verifyFirebaseToken, async (req, res) => {
       // console.log(verifyFirebaseToken);
-      const result = await userCollection.find().toArray();
+      const searchText = req.query.searchText;
+      const query = {};
+      if (searchText) {
+        query.$or = [
+          { displayName: { $regex: searchText, $options: "i" } },
+          { email: { $regex: searchText, $options: "i" } },
+        ];
+      }
+
+      const result = await userCollection
+        .find(query)
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .toArray();
       res.send(result);
     });
 
@@ -134,18 +147,15 @@ async function run() {
       }
     );
 
-    //
+    // all data query email,status
     app.get("/parcels", async (req, res) => {
-      const parcels = await parcelCollection.find().toArray();
-      res.send(parcels);
-    });
-
-    // single data query email
-    app.get("/parcel", async (req, res) => {
       const query = {};
-      const { email } = req.query;
+      const { email, deliverStatus } = req.query;
       if (email) {
         query.senderEmail = email;
+      }
+      if (deliverStatus) {
+        query.deliverStatus = deliverStatus;
       }
       const options = { sort: { createdAt: -1 } };
       const parcels = await parcelCollection.find(query, options).toArray();
@@ -160,17 +170,46 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/parcels/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await parcelCollection.deleteOne(query);
-      res.send(result);
-    });
-
     app.post("/parcels", async (req, res) => {
       const parcel = req.body;
       parcel.createdAt = new Date();
       const result = await parcelCollection.insertOne(parcel);
+      res.send(result);
+    });
+
+    // parcel assign to riders
+    app.patch("/parcels/:id", async (req, res) => {
+      const { riderId, riderEmail, riderName } = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          deliverStatus: "driver_assigned",
+          riderId,
+          riderEmail,
+          riderName,
+        },
+      };
+      const result = await parcelCollection.updateOne(query, updateDoc);
+
+      // update rider information
+      const riderQuery = { _id: new ObjectId(riderId) };
+      const updateRider = {
+        $set: {
+          workStatus: "in_delivery",
+        },
+      };
+      const riderResult = await riderCollection.updateOne(
+        riderQuery,
+        updateRider
+      );
+      res.send(riderResult);
+    });
+
+    app.delete("/parcels/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await parcelCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -284,6 +323,7 @@ async function run() {
         const update = {
           $set: {
             paymentStatus: "paid",
+            deliverStatus: "pending-pickup",
             trackingId: trackingId,
           },
         };
@@ -325,11 +365,18 @@ async function run() {
       const result = await riderCollection.insertOne(rider);
       res.send(result);
     });
-    // query with status
+    // query with
     app.get("/riders", async (req, res) => {
+      const { status, district, workStatus } = req.query;
       const query = {};
-      if (req.query.status) {
-        query.status = req.query.status;
+      if (status) {
+        query.status = status;
+      }
+      if (district) {
+        query.district = district;
+      }
+      if (workStatus) {
+        query.workStatus = workStatus;
       }
       const rider = await riderCollection.find(query).toArray();
       res.send(rider);
@@ -343,6 +390,7 @@ async function run() {
       const updateDoc = {
         $set: {
           status: status,
+          workStatus: "available",
         },
       };
       const result = await riderCollection.updateOne(query, updateDoc);

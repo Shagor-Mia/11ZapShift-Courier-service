@@ -14,7 +14,7 @@ const MyParcels = () => {
   const { data: parcels = [], refetch } = useQuery({
     queryKey: ["myParcels", user?.email],
     queryFn: async () => {
-      const res = await axiosSecure.get(`/parcel?email=${user.email}`);
+      const res = await axiosSecure.get(`/parcels?email=${user.email}`);
       // console.log(res.data);
       return res.data;
     },
@@ -78,6 +78,7 @@ const MyParcels = () => {
               <th>parcelType</th>
               <th>Payment </th>
               <th>delivery Status</th>
+              <th>TrackingId</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -109,7 +110,8 @@ const MyParcels = () => {
                     // </Link>
                   )}
                 </td>
-                <td>success</td>
+                <td>{parcel.deliverStatus}</td>
+                <td>{parcel.trackingId}</td>
                 <td>
                   <button className="btn btn-square hover:bg-primary">
                     <FiEdit />
