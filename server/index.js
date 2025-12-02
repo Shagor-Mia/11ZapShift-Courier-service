@@ -201,7 +201,13 @@ async function run() {
 
     app.post("/parcels", async (req, res) => {
       const parcel = req.body;
+      const trackingId = generateTrackingId();
+
       parcel.createdAt = new Date();
+      parcel.trackingId = trackingId;
+
+      logTrackingId(trackingId, "parcel_created");
+
       const result = await parcelCollection.insertOne(parcel);
       res.send(result);
     });
@@ -320,43 +326,12 @@ async function run() {
         metadata: {
           parcelId: paymentInfo.parcelId,
           parcelName: paymentInfo.parcelName,
+          trackingId: paymentInfo.trackingId,
         },
         customer_email: paymentInfo.senderEmail,
         success_url: `${process.env.DOMAIN_URL}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.DOMAIN_URL}/dashboard/payment-cancelled?success=true`,
       });
-      res.send({ url: session.url });
-    });
-
-    // old
-    app.post("/create-checkout-session", async (req, res) => {
-      const paymentInfo = req.body;
-      const amount = parseInt(paymentInfo.cost * 100);
-
-      const session = await stripe.checkout.sessions.create({
-        line_items: [
-          {
-            // Provide the exact Price ID (for example, price_1234) of the product you want to sell
-            price_data: {
-              currency: "USD",
-              unit_amount: amount,
-              product_data: {
-                name: paymentInfo.parcelName,
-              },
-            },
-            quantity: 1,
-          },
-        ],
-        customer_email: paymentInfo.senderEmail,
-        metadata: {
-          parcelId: paymentInfo.parcelId,
-        },
-        mode: "payment",
-        success_url: `${process.env.DOMAIN_URL}/dashboard/payment-success`,
-        cancel_url: `${process.env.DOMAIN_URL}/dashboard/payment-cancelled`,
-      });
-
-      console.log(session);
       res.send({ url: session.url });
     });
 
@@ -369,6 +344,7 @@ async function run() {
       // stop duplication input
       const transactionId = session.payment_intent;
       const query = { transactionId: transactionId };
+
       const paymentExist = await paymentCollection.findOne(query);
       if (paymentExist) {
         return res.send({
@@ -378,7 +354,8 @@ async function run() {
         });
       }
 
-      const trackingId = generateTrackingId();
+      // use the previous trackingId
+      const trackingId = session.metadata.trackingId;
 
       if (session.payment_status === "paid") {
         const id = session.metadata.parcelId;
@@ -387,7 +364,7 @@ async function run() {
           $set: {
             paymentStatus: "paid",
             deliverStatus: "pending-pickup",
-            trackingId: trackingId,
+            // trackingId: trackingId,
           },
         };
         const result = await parcelCollection.updateOne(query, update);

@@ -12,7 +12,7 @@ import ForgetPassword from "../pages/Auth/ForgetPassword";
 import SendParcel from "../pages/SendParcel/SendParcel";
 import DashboardLayout from "../layouts/DashboardLayout";
 import MyParcels from "../pages/Dashboards/MyParcels";
-import Payment from "../pages/Dashboards/Payment";
+// import Payment from "../pages/Dashboards/Payment";
 import PaymentSuccess from "../pages/Dashboards/PaymentSuccess";
 import PaymentFailed from "../pages/Dashboards/PaymentFailed";
 import PaymentHistory from "../pages/Dashboards/PaymentHistory";
@@ -94,10 +94,10 @@ const router = createBrowserRouter([
         path: "my-parcels",
         Component: MyParcels,
       },
-      {
-        path: "payment/:parcelId",
-        Component: Payment,
-      },
+      // {
+      //   path: "payment/:parcelId",
+      //   Component: Payment,
+      // },
       {
         path: "payment-success",
         Component: PaymentSuccess,
