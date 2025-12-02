@@ -7,7 +7,7 @@ const CompetedDeliveries = () => {
   const { user } = useAuth();
   const axiosSecure = useSecureAxios();
 
-  const { data: parcels = [], refetch } = useQuery({
+  const { data: parcels = [] } = useQuery({
     queryKey: ["parcels", user.email, "parcel_delivered"],
     queryFn: async () => {
       const res = await axiosSecure.get(

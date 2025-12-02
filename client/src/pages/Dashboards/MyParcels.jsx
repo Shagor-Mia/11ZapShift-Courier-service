@@ -111,7 +111,11 @@ const MyParcels = () => {
                   )}
                 </td>
                 <td>{parcel.deliverStatus}</td>
-                <td>{parcel.trackingId}</td>
+                <td>
+                  <Link to={`/parcel-track/${parcel.trackingId}`}>
+                    {parcel.trackingId}
+                  </Link>
+                </td>
                 <td>
                   <button className="btn btn-square hover:bg-primary">
                     <FiEdit />

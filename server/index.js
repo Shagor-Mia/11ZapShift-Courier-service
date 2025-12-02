@@ -70,9 +70,21 @@ async function run() {
     const parcelCollection = db.collection("parcels");
     const paymentCollection = db.collection("payments");
     const riderCollection = db.collection("riders");
+    const trackingCollection = db.collection("tracking");
+
+    // tracking
+    const logTrackingId = async (trackingId, status) => {
+      const log = {
+        trackingId,
+        status,
+        createdAt: new Date(),
+        details: status.split("_").join(" "),
+      };
+      const result = await trackingCollection.insertOne(log);
+      return result;
+    };
 
     // user apis
-
     // middleware for admin access,must be used after verifyToken
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded_email;
@@ -196,7 +208,7 @@ async function run() {
 
     // parcel assign to riders ,specific like /parcels/:id/assign
     app.patch("/parcels/:id", async (req, res) => {
-      const { riderId, riderEmail, riderName } = req.body;
+      const { riderId, riderEmail, riderName, trackingId } = req.body;
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -220,12 +232,14 @@ async function run() {
         riderQuery,
         updateRider
       );
+      // tracking
+      logTrackingId(trackingId, "driver_assigned");
       res.send(riderResult);
     });
 
     // rider delivery status,accept,reject
     app.patch("/parcels/:id/status", async (req, res) => {
-      const { deliverStatus, riderId } = req.body;
+      const { deliverStatus, riderId, trackingId } = req.body;
       const query = { _id: new ObjectId(req.params.id) };
 
       const updateStatus = {
@@ -249,6 +263,9 @@ async function run() {
       }
 
       const result = await parcelCollection.updateOne(query, updateStatus);
+      // logTracking
+      logTrackingId(trackingId, deliverStatus);
+
       res.send(result);
     });
 
@@ -279,7 +296,7 @@ async function run() {
         .toArray();
       res.send(result);
     });
-
+    //
     // stripe integration
     app.post("/payment-checkout-session", async (req, res) => {
       const paymentInfo = req.body;
@@ -389,6 +406,10 @@ async function run() {
 
         if (session.payment_status === "paid") {
           const paymentResult = await paymentCollection.insertOne(payment);
+
+          // tracking
+          logTrackingId(trackingId, "parcel_paid");
+
           res.send({
             success: true,
             modifyParcel: result,
@@ -464,6 +485,13 @@ async function run() {
       res.send(result);
     });
 
+    // tracking apis
+    app.get("/trackings/:trackingId/logs", async (req, res) => {
+      const trackingId = req.params.trackingId;
+      const query = { trackingId };
+      const result = await trackingCollection.find(query).toArray();
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
