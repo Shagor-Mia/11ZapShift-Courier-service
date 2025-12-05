@@ -13,7 +13,7 @@ const PaymentSuccess = () => {
   useEffect(() => {
     if (sessionId) {
       axiosSecure
-        .patch(`/verify-success-payment?session_id=${sessionId}`)
+        .patch(`/payment-success?session_id=${sessionId}`)
         .then((res) => {
           console.log(res.data);
           setPaymentInfo({

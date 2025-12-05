@@ -7,7 +7,7 @@ const Coverage = () => {
   const position = [23.685, 90.3563];
   const serviceCenters = useLoaderData();
   const mapRef = useRef();
-  console.log(serviceCenters);
+  // console.log(serviceCenters);
 
   const handleSearchLocation = (e) => {
     e.preventDefault();
@@ -17,7 +17,7 @@ const Coverage = () => {
     );
     if (district) {
       const coord = [district.latitude, district.longitude];
-      console.log(coord, district);
+      // console.log(coord, district);
       mapRef.current.flyTo(coord, 14);
     }
   };

@@ -94,6 +94,15 @@ async function run() {
       }
       next();
     };
+    // middleware for admin access,must be used after verifyToken
+    const verifyRider = async (req, res, next) => {
+      const email = req.decoded_email;
+      const rider = await userCollection.findOne({ email });
+      if (!rider || rider.role !== "rider") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
 
     app.get("/users", verifyFirebaseToken, async (req, res) => {
       // console.log(verifyFirebaseToken);
@@ -196,6 +205,20 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await parcelCollection.findOne(query);
+      res.send(result);
+    });
+
+    // aggregate deliveryStatus
+    app.get("/parcels/delivery-status/states", async (req, res) => {
+      const pipeline = [
+        {
+          $group: {
+            _id: "$deliverStatus", //  group by value of deliverStatus field
+            count: { $sum: 1 },
+          },
+        },
+      ];
+      const result = await parcelCollection.aggregate(pipeline).toArray();
       res.send(result);
     });
 
@@ -336,7 +359,7 @@ async function run() {
     });
 
     // verify payment
-    app.patch("/verify-success-payment", async (req, res) => {
+    app.patch("/payment-success", async (req, res) => {
       const sessionId = req.query.session_id;
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       // console.log(session);
@@ -381,23 +404,20 @@ async function run() {
           paidAt: new Date(),
         };
 
-        if (session.payment_status === "paid") {
-          const paymentResult = await paymentCollection.insertOne(payment);
+        const paymentResult = await paymentCollection.insertOne(payment);
 
-          // tracking
-          logTrackingId(trackingId, "parcel_paid");
+        // tracking
+        logTrackingId(trackingId, "parcel_paid");
 
-          res.send({
-            success: true,
-            modifyParcel: result,
-            trackingId: trackingId,
-            transactionId: session.payment_intent,
-            paymentInfo: paymentResult,
-          });
-        }
-      } else {
-        res.send({ success: false });
+        return res.send({
+          success: true,
+          modifyParcel: result,
+          trackingId: trackingId,
+          transactionId: session.payment_intent,
+          paymentInfo: paymentResult,
+        });
       }
+      return res.send({ success: false });
     });
 
     // riders api
