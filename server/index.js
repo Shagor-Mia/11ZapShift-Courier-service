@@ -12,6 +12,8 @@ const admin = require("firebase-admin");
 
 // firebase adminSDK
 const fs = require("fs");
+const { count } = require("console");
+const { format } = require("path");
 
 const serviceAccount = JSON.parse(
   Buffer.from(process.env.FIREBASE_ADMIN, "base64").toString("utf8")
@@ -35,7 +37,7 @@ app.use(express.json());
 app.use(cors());
 
 const verifyFirebaseToken = async (req, res, next) => {
-  // console.log("authorizeToken,", req.headers.authorization);
+  console.log("authorizeToken,", req.headers.authorization);
   const token = req.headers.authorization;
   if (!token) {
     return res.status(401).send({ message: `unauthorized access` });
@@ -43,7 +45,7 @@ const verifyFirebaseToken = async (req, res, next) => {
   try {
     const idToken = token.split(" ")[1];
     const decoded = await admin.auth().verifyIdToken(idToken);
-    // console.log(`decoded in the token`, decoded);
+    console.log(`decoded in the token`, decoded);
     req.decoded_email = decoded.email;
   } catch (error) {
     return res.status(401).send({ message: "Invalid or expired token", error });
@@ -97,6 +99,7 @@ async function run() {
     // middleware for admin access,must be used after verifyToken
     const verifyRider = async (req, res, next) => {
       const email = req.decoded_email;
+      console.log(email);
       const rider = await userCollection.findOne({ email });
       if (!rider || rider.role !== "rider") {
         return res.status(403).send({ message: "forbidden access" });
@@ -208,13 +211,19 @@ async function run() {
       res.send(result);
     });
 
-    // aggregate deliveryStatus
+    // aggregate deliveryStatus for admin
     app.get("/parcels/delivery-status/states", async (req, res) => {
       const pipeline = [
         {
           $group: {
             _id: "$deliverStatus", //  group by value of deliverStatus field
             count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            status: "$_id",
+            count: 1,
           },
         },
       ];
@@ -421,14 +430,6 @@ async function run() {
     });
 
     // riders api
-    app.post("/riders", async (req, res) => {
-      const rider = req.body;
-      rider.status = "pending";
-      rider.createdAt = new Date();
-
-      const result = await riderCollection.insertOne(rider);
-      res.send(result);
-    });
     // query with
     app.get("/riders", async (req, res) => {
       const { status, district, workStatus } = req.query;
@@ -444,6 +445,69 @@ async function run() {
       }
       const rider = await riderCollection.find(query).toArray();
       res.send(rider);
+    });
+
+    // rider dashboard using aggregation
+    app.get(
+      "/rider/delivery-per-day",
+      // verifyFirebaseToken,
+      // verifyRider,
+      async (req, res) => {
+        const email = req.query.email;
+        // aggregate on parcel
+        const pipeline = [
+          {
+            $match: {
+              // riderEmail: '$riderEmail',
+              riderEmail: email,
+              deliverStatus: "parcel_delivered",
+            },
+          },
+          {
+            $lookup: {
+              from: "tracking",
+              localField: "trackingId",
+              foreignField: "trackingId",
+              as: "parcel_trackings",
+            },
+          },
+          {
+            $unwind: "$parcel_trackings",
+          },
+          {
+            $match: {
+              "parcel_trackings.status": "parcel_delivered",
+            },
+          },
+          {
+            $addFields: {
+              deliveryDay: {
+                $dateToString: {
+                  format: "%Y-%m-%d",
+                  date: "$parcel_trackings.createdAt",
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: "$deliveryDay",
+              deliveredCount: { $sum: 1 },
+            },
+          },
+        ];
+        const result = await parcelCollection.aggregate(pipeline).toArray();
+        res.send(result);
+      }
+    );
+    //
+    app.post("/riders", async (req, res) => {
+      const rider = req.body;
+      rider.status = "pending";
+      rider.createdAt = new Date();
+
+      const result = await riderCollection.insertOne(rider);
+      res.send(result);
     });
 
     // update rider status,role
